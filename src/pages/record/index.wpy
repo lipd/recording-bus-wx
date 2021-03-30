@@ -1,0 +1,58 @@
+<style lang="less">
+.recorder-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main {
+  flex: 1;
+}
+
+.footer {
+  background: #fafafa;
+}
+</style>
+
+<template>
+  <div class="recorder-page">
+    <div class="main">
+      <player :ctx="audioCtx" />
+    </div>
+    <div class="footer">
+      <recorder :audio="audio" @save="onSave($event)" />
+    </div>
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core'
+
+wepy.page({
+  data() {
+    return {
+      audioCtx: null,
+    }
+  },
+
+  onLoad() {
+    this.audioCtx = wx.createInnerAudioContext()
+  },
+
+  methods: {
+    onSave(res) {
+      const { tempFilePath } = res
+      this.audioCtx.src = tempFilePath
+    },
+  },
+})
+</script>
+<config>
+{
+  "usingComponents": {
+    "recorder": "./components/recorder",
+    "player": "./components/player"
+  },
+  navigationBarTitleText: 'record'
+}
+</config>

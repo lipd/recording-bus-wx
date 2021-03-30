@@ -1,0 +1,32 @@
+<style lang="less" scoped>
+</style>
+
+<template>
+  <div v-if="ctx">
+    <button @tap="play">播放录音</button>
+    <button @tap="stop">停止播放</button>
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core'
+
+wepy.component({
+  props: {
+    ctx: {
+      type: Object,
+      required: true,
+    },
+  },
+
+  methods: {
+    play() {
+      this.ctx.play()
+    },
+
+    stop() {
+      this.ctx.stop()
+    },
+  },
+})
+</script>

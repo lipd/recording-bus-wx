@@ -1,0 +1,184 @@
+<style lang="less" scoped>
+@import '../../../../assets/styles/icon.less';
+.recorder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150rpx;
+}
+
+.circle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100rpx;
+  height: 100rpx;
+  margin: 0 80rpx;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx #d0d0d0;
+
+  &:active {
+    background: rgba(56, 56, 56, 0.15);
+  }
+}
+
+.circle-icon {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  background: #fb2a2d;
+}
+
+.rect-icon {
+  width: 35rpx;
+  height: 35rpx;
+  border-radius: 15%;
+  background: #fb2a2d;
+}
+
+.function-button {
+  padding: 20rpx 50rpx 0rpx;
+
+  &:active {
+    background: rgba(56, 56, 56, 0.15);
+  }
+
+  .icon-text {
+    font-size: 20rpx;
+    text-align: center;
+  }
+}
+
+.ban {
+  opacity: 0.3;
+}
+</style>
+
+<template>
+  <div class="recorder">
+    <div v-if="hasData" class="function-button" @tap="abandonRecording">
+      <div class="iconfont icon-refresh" style="font-size:60rpx;"></div>
+      <div class="icon-text">重录</div>
+    </div>
+
+    <!-- Record Button -->
+    <div class="circle-button" v-if="!hasData" @tap="startRecording">
+      <div class="iconfont icon-mic" style="font-size:48rpx;"></div>
+    </div>
+
+    <div
+      :class="{ 'circle-button': true, ban: isSaved }"
+      v-if="hasData && !isPause"
+      @tap="pauseRecording"
+    >
+      <div class="iconfont icon-pause" style="font-size:45rpx;"></div>
+    </div>
+
+    <div
+      :class="{ 'circle-button': true, ban: isSaved }"
+      v-if="hasData && isPause"
+      @tap="resumeRecording"
+    >
+      <div
+        class="iconfont icon-play"
+        style="font-size:48rpx; margin-left: 8rpx;"
+      ></div>
+    </div>
+    <!-- Record Button End -->
+
+    <div v-if="hasData" class="function-button" @tap="saveRecording">
+      <div class="iconfont icon-save" style="font-size:50rpx;"></div>
+      <div class="icon-text">保存</div>
+    </div>
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core'
+
+wepy.component({
+  data() {
+    return {
+      rm: null,
+      hasData: false,
+      isPause: true,
+      isSaved: false,
+    }
+  },
+  props: {
+    options: {
+      type: Object,
+      default: {
+        duration: 10000,
+        sampleRate: 44100,
+        numberOfChannels: 1,
+        encodeBitRate: 192000,
+        format: 'aac',
+        frameSize: 50,
+      },
+    },
+  },
+
+  ready() {
+    this.rm = wx.getRecorderManager()
+    const rm = this.rm
+
+    rm.onStart(() => {
+      this.hasData = true
+      this.isPause = false
+      this.$emit('start')
+    })
+
+    rm.onPause(() => {
+      this.isPause = true
+      this.$emit('pause')
+    })
+
+    rm.onResume(() => {
+      this.isPause = false
+      this.$emit('resume')
+    })
+
+    rm.onStop(res => {
+      this.isPause = true
+      if (!this.hasData) {
+        this.$emit('abandon')
+      } else {
+        this.$emit('save', res)
+      }
+    })
+
+    rm.onFrameRecorded(res => {
+      this.$emit('recording', res)
+    })
+  },
+
+  methods: {
+    startRecording() {
+      this.rm.start(this.options)
+    },
+
+    pauseRecording() {
+      if (this.isSaved) return
+      this.rm.pause()
+    },
+
+    resumeRecording() {
+      if (this.isSaved) return
+      this.rm.resume()
+    },
+
+    saveRecording() {
+      this.isSaved = true
+      this.rm.stop()
+    },
+
+    abandonRecording() {
+      this.hasData = false
+      this.isSaved = false
+      this.rm.stop()
+    },
+  },
+})
+</script>
