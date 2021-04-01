@@ -1,32 +1,265 @@
 <style lang="less" scoped>
+@import '../../../../assets/styles/icon.less';
+
+.player {
+  background: #e8e8e8;
+  margin: 20rpx 20rpx;
+  padding: 30rpx 40rpx 25rpx;
+  border-radius: 15rpx;
+}
+
+.process-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+
+  .timer {
+    font-size: 24rpx;
+    color: grey;
+  }
+
+  .slider {
+    flex: 1;
+    margin: 0 30rpx;
+  }
+}
+
+.panel {
+  display: flex;
+  padding: 10rpx 0 0;
+
+  .panel-text {
+    position: relative;
+    top: -2rpx;
+    font-size: 22rpx;
+    border: black 3rpx solid;
+    border-radius: 10rpx;
+    padding: 5rpx;
+  }
+
+  .left {
+    display: flex;
+    flex: 1;
+    align-items: center;
+
+    .panel-text {
+      margin: 0 0 0 30rpx;
+      color: grey;
+      border-color: grey;
+    }
+
+    .panel-text-active {
+      color: #01e06e;
+      border-color: #01e06e;
+    }
+  }
+
+  .right {
+    display: flex;
+    align-items: center;
+
+    .button-container {
+      margin: 0 50rpx 0;
+      height: 60rpx;
+      width: 65rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .icon-play {
+      padding: 0 0 0 5rpx;
+    }
+
+    .panel-text {
+      padding: 5rpx 10rpx;
+      margin-right: 50rpx;
+      &:active {
+        background: rgba(56, 56, 56, 0.15);
+      }
+    }
+  }
+}
+
+.iconfont {
+  &:active {
+    background: rgba(56, 56, 56, 0.15);
+  }
+}
 </style>
 
 <template>
-  <div v-if="ctx">
-    <button @tap="play">播放录音</button>
-    <button @tap="stop">停止播放</button>
+  <div class="player">
+    <div class="process-bar">
+      <text class="timer">{{ currentText }}</text>
+      <slider
+        bindchange="changeSlider"
+        class="slider"
+        block-size="12"
+        step="1"
+        :disabled="timer.duration === -1"
+        :max="timer.duration === -1 ? 100 : timer.duration"
+        :value="timer.current"
+        backgroundColor="red"
+      ></slider>
+      <text class="timer">{{ durationText }}</text>
+    </div>
+
+    <div class="panel">
+      <div class="left">
+        <div class="iconfont icon-import" style="font-size:60rpx;"></div>
+        <div :class="{ 'panel-text': true, 'panel-text-active': isUpload }">
+          {{ isUpload ? '已上传' : '未上传' }}
+        </div>
+      </div>
+      <div class="right">
+        <!-- <div @tap="changeSpeed" class="panel-text">
+          {{
+            SPEEDS[speedIndex] === 1 || SPEEDS[speedIndex] === 2
+              ? SPEEDS[speedIndex] + '.0'
+              : SPEEDS[speedIndex]
+          }}
+          倍速
+        </div> -->
+
+        <div
+          @tap="audioBackward"
+          class="iconfont icon-backward"
+          style="font-size:60rpx;"
+        ></div>
+
+        <div class="button-container">
+          <div
+            @tap="audioPlay"
+            v-if="!isPlaying"
+            class="iconfont icon-play"
+            style="font-size:50rpx;"
+          ></div>
+          <div
+            @tap="audioPause"
+            v-if="isPlaying"
+            class="iconfont icon-pause"
+            style="font-size:45rpx;"
+          ></div>
+        </div>
+
+        <div
+          @tap="audioForward"
+          class="iconfont icon-forward"
+          style="font-size:60rpx;"
+        ></div>
+      </div>
+    </div>
+    <!-- <button @tap="play">播放录音</button>
+    <button @tap="stop">停止播放</button> -->
   </div>
 </template>
 
 <script>
 import wepy from '@wepy/core'
+import dayjs from 'dayjs'
 
 wepy.component({
+  data: {
+    // SPEEDS: [0.5, 1, 1.5, 2],
+    audioCtx: null,
+    timer: {
+      current: 0,
+      duration: -1,
+    },
+    // speedIndex: 1,
+    isPlaying: false,
+    isUpload: false,
+  },
+
+  computed: {
+    currentText() {
+      return dayjs(this.timer.current * 1000).format('mm:ss')
+    },
+    durationText() {
+      if (this.timer.duration === -1) return '00:00'
+      return dayjs(this.timer.duration * 1000).format('mm:ss')
+    },
+  },
+
   props: {
-    ctx: {
-      type: Object,
+    src: {
+      type: String,
       required: true,
     },
   },
 
+  ready() {
+    this.audioCtx = wx.createInnerAudioContext()
+    const audioCtx = this.audioCtx
+    audioCtx.src = this.src
+
+    audioCtx.onPlay(() => {
+      this.isPlaying = true
+    })
+
+    audioCtx.onPause(() => {
+      this.isPlaying = false
+    })
+
+    audioCtx.onEnded(() => {
+      this.isPlaying = false
+      this.timer.current = this.timer.duration
+    })
+
+    audioCtx.onTimeUpdate(() => {
+      this.timer.current = Math.floor(audioCtx.currentTime)
+      this.timer.duration = Math.floor(audioCtx.duration)
+    })
+
+    audioCtx.onSeeking(() => {
+      this.isPlaying = false
+    })
+
+    audioCtx.onSeeked(() => {
+      this.audioCtx.play()
+    })
+  },
+
   methods: {
-    play() {
-      this.ctx.play()
+    audioPlay() {
+      this.audioCtx.play()
     },
 
-    stop() {
-      this.ctx.stop()
+    audioPause() {
+      this.audioCtx.pause()
     },
+
+    audioBackward() {
+      this.audioCtx.pause()
+      if (this.timer.duration === -1) return
+      if (this.timer.current <= 0) return
+      this.timer.current -= 1
+      this.audioCtx.seek(this.timer.current)
+    },
+
+    audioForward() {
+      this.audioCtx.pause()
+      if (this.timer.duration === -1) return
+      if (this.timer.current >= this.timer.duration) return
+      this.timer.current += 1
+      this.audioCtx.seek(this.timer.current)
+    },
+
+    changeSlider(e) {
+      const second = Math.floor(e.$wx.detail.value)
+      this.timer.current = second
+      this.audioCtx.seek(second)
+    },
+
+    // changeSpeed() {
+    //   if (this.speedIndex === 3) {
+    //     this.speedIndex = 0
+    //   } else {
+    //     this.speedIndex++
+    //   }
+    //   this.audioCtx.playbackRate = SPEEDS[speedIndex]
+    // },
   },
 })
 </script>

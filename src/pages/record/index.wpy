@@ -17,10 +17,10 @@
 <template>
   <div class="recorder-page">
     <div class="main">
-      <player :ctx="audioCtx" />
+      <player v-if="audioSrc" :src="audioSrc" />
     </div>
     <div class="footer">
-      <recorder :audio="audio" @save="onSave($event)" />
+      <recorder @save="onSave($event)" @abandon="onAbandon()" />
     </div>
   </div>
 </template>
@@ -29,20 +29,18 @@
 import wepy from '@wepy/core'
 
 wepy.page({
-  data() {
-    return {
-      audioCtx: null,
-    }
-  },
-
-  onLoad() {
-    this.audioCtx = wx.createInnerAudioContext()
+  data: {
+    audioSrc: null,
   },
 
   methods: {
     onSave(res) {
       const { tempFilePath } = res
-      this.audioCtx.src = tempFilePath
+      this.audioSrc = tempFilePath
+    },
+
+    onAbandon() {
+      this.audioSrc = null
     },
   },
 })
