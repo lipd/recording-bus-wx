@@ -116,17 +116,15 @@ wepy.component({
         sampleRate: 44100,
         numberOfChannels: 1,
         encodeBitRate: 192000,
-        format: 'aac',
-        frameSize: 50,
+        format: 'mp3',
+        frameSize: 1,
       },
     },
   },
 
   ready() {
-    // wx.getRecorderManager() 可能存在延时
     this.rm = wx.getRecorderManager()
     const rm = this.rm
-    console.log(rm)
 
     rm.onStart(() => {
       this.hasData = true
