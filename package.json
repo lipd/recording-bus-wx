@@ -1,5 +1,5 @@
 {
-  "name": "ear-bus",
+  "name": "recording-bus-wx",
   "version": "0.0.1",
   "description": "A ear training client of wx-mini-program",
   "main": "dist/app.js",
@@ -12,7 +12,8 @@
   "license": "MIT",
   "dependencies": {
     "@wepy/core": "^2.0.0-alpha.16",
-    "dayjs": "^1.10.4"
+    "dayjs": "^1.10.4",
+    "fft.js": "^4.0.4"
   },
   "devDependencies": {
     "@wepy/compiler-babel": "^2.0.5",
